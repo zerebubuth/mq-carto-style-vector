@@ -1,0 +1,272 @@
+{
+    "_prefs": {
+        "disabled": [
+            "boundingbox"
+        ],
+        "inspector": false,
+        "mapid": "",
+        "rev": "",
+        "saveCenter": false
+    },
+    "attribution": "",
+    "metatile": 1,
+    "center": [
+        -75.6038,
+        40.0799,
+        11
+    ],
+    "description": "",
+    "Layer": [
+        {
+            "id": "boundingbox",
+            "Datasource": {
+                "file": "/home/pnorman/mq-carto-style-vector/10m-900913-bounding-box.shp",
+                "type": "shape"
+            },
+            "description": "The entire world",
+            "fields": {
+                "Id": "Number"
+            },
+            "properties": {
+                "buffer-size": 2
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "boundingbox"
+        },
+        {
+            "id": "water",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom\n  FROM mq_water_polygon\n  WHERE ST_Area(geom)/NULLIF(!pixel_width!::float*!pixel_height!::float, 0) > 0.25\n) AS water",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Areas covered by water. Includes oceans.",
+            "fields": {},
+            "properties": {
+                "buffer-size": 2
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "water"
+        },
+        {
+            "id": "landmark_polygon",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom, landmark\n  FROM mq_landmark\n  WHERE ST_Area(geom)/NULLIF(!pixel_width!::float*!pixel_height!::float, 0) > 0.25 -- This also excludes ST_Points\n  ORDER BY zlevel ASC, area DESC\n) AS landmark_polygon",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Area features for background drawing",
+            "fields": {
+                "landmark": "Landmark type"
+            },
+            "properties": {
+                "buffer-size": 8
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "landmark_polygon"
+        },
+        {
+            "id": "buildings",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom\n  FROM mq_building\n  WHERE z(!scale_denominator!) >= 12\n) AS buildings",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Buildings",
+            "fields": null,
+            "properties": {
+                "buffer-size": 2
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "buildings"
+        },
+        {
+            "id": "admin_lines",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT \n    geom, admin\n  FROM mq_admin_line\n  WHERE z(!scale_denominator!) < 6 AND admin IN ('country','state')\n    OR (z(!scale_denominator!) >= 6 AND z(!scale_denominator!) < 12 AND admin IN ('country','state','county','township'))\n    OR z(!scale_denominator!) >= 12\n  ORDER BY admin DESC\n) AS admin_lines",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "",
+            "fields": {
+                "admin": "Number"
+            },
+            "properties": {
+                "buffer-size": 8
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "admin_lines"
+        },
+        {
+            "id": "trans_linear",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom, transportation::text, display_class, brunnel, NULL as ramp, NULL as toll\n  FROM mq_transportation\n  WHERE st_geometrytype(geom) = 'ST_LineString'\n    AND ((z(!scale_denominator!) >= 4\n        AND z(!scale_denominator!) < 8\n        AND transportation = 'road' AND display_class = 0)\n      OR (z(!scale_denominator!) >= 8\n        AND z(!scale_denominator!) < 10\n        AND transportation = 'road' AND display_class BETWEEN 0 AND 2)\n      OR (z(!scale_denominator!) >= 10\n        AND z(!scale_denominator!) < 12\n        AND ((transportation = 'road' AND display_class BETWEEN 0 AND 3)\n          OR transportation = 'ferry'))\n      OR (z(!scale_denominator!) >= 12\n        AND z(!scale_denominator!) < 14\n        AND ((transportation = 'road' AND display_class BETWEEN 0 AND 4)\n          OR transportation = 'ferry')\n          OR transportation = 'rail')\n      OR (z(!scale_denominator!) >= 14\n        AND z(!scale_denominator!) < 16\n        AND transportation IN ('road', 'ferry', 'rail'))\n      OR z(!scale_denominator!) >= 16)\n  ORDER BY zlevel ASC,\n    transportation, -- probably needs a better ordering here\n    display_class DESC\n) AS trans_linear",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "",
+            "fields": null,
+            "properties": {
+                "buffer-size": 16
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "trans_linear"
+        },
+        {
+            "id": "highway_labels",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom,\n    -- This is a bit of a hack to split them out, because vector tiles can't handle arrays\n    -- Also, it ignores shield_priorities as that's very difficult to handle without 9.4\n    split_part(tags->'INT-shield', ',', 1) AS shield1,\n    split_part(tags->'INT-shield_banner', ',', 1) AS shield1_banner,\n    split_part(tags->'INT-shield_number', ',', 1) AS shield1_number,\n    length(split_part(tags->'INT-shield_number', ',', 1)) AS shield1_number_length,\n    split_part(tags->'INT-shield_prefix', ',', 1) AS shield1_prefix,\n    split_part(tags->'INT-shield', ',', 2) AS shield2,\n    split_part(tags->'INT-shield_banner', ',', 2) AS shield2_banner,\n    split_part(tags->'INT-shield_number', ',', 2) AS shield2_number,\n    length(split_part(tags->'INT-shield_number', ',', 2)) AS shield2_number_length,\n    split_part(tags->'INT-shield_prefix', ',', 2) AS shield2_prefix,\n    split_part(tags->'INT-shield', ',', 3) AS shield3,\n    split_part(tags->'INT-shield_banner', ',', 3) AS shield3_banner,\n    split_part(tags->'INT-shield_number', ',', 3) AS shield3_number,\n    length(split_part(tags->'INT-shield_number', ',', 3)) AS shield3_number_length,\n    split_part(tags->'INT-shield_prefix', ',', 3) AS shield3_prefix,\n    split_part(tags->'INT-shield', ',', 4) AS shield4,\n    split_part(tags->'INT-shield_banner', ',', 4) AS shield4_banner,\n    split_part(tags->'INT-shield_number', ',', 4) AS shield4_number,\n    length(split_part(tags->'INT-shield_number', ',', 4)) AS shield4_number_length,\n    split_part(tags->'INT-shield_prefix', ',', 4) AS shield4_prefix\n  FROM mq_transportation\n    WHERE shield_count > 0\n      AND ((z(!scale_denominator!) >= 4\n      AND z(!scale_denominator!) < 8\n      AND transportation = 'road' AND display_class = 0)\n    OR (z(!scale_denominator!) >= 8\n      AND z(!scale_denominator!) < 10\n      AND transportation = 'road' AND display_class BETWEEN 0 AND 2)\n    OR (z(!scale_denominator!) >= 10\n      AND z(!scale_denominator!) < 12\n      AND ((transportation = 'road' AND display_class BETWEEN 0 AND 3)\n        OR transportation = 'ferry'))\n    OR (z(!scale_denominator!) >= 12\n      AND z(!scale_denominator!) < 14\n      AND ((transportation = 'road' AND display_class BETWEEN 0 AND 4)\n        OR transportation = 'ferry')\n        OR transportation = 'rail')\n    OR (z(!scale_denominator!) >= 14\n      AND z(!scale_denominator!) < 16\n      AND transportation IN ('road', 'ferry', 'rail'))\n    OR z(!scale_denominator!) >= 16)\n  ORDER BY display_class DESC\n) AS trans_linear",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Highway shields",
+            "fields": {
+                "display_class": "Number",
+                "name": "String",
+                "name_len": "Number"
+            },
+            "properties": {
+                "buffer-size": 64
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "highway_labels"
+        },
+        {
+            "id": "place_labels",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom, label AS name,  admin, display_class\n  FROM mq_admin_point\n  ORDER BY display_class ASC NULLS LAST,\n    population DESC NULLS LAST\n) AS place_labels",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "",
+            "fields": {
+                "class": "Number",
+                "display_class": "Number",
+                "name": "String"
+            },
+            "properties": {
+                "buffer-size": 64
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "place_labels"
+        },
+        {
+            "id": "highway_overlay",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom, display_class\n  FROM mq_transportation\n  WHERE transportation = 'road'\n    AND display_class = 0\n) AS highway_overlay",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Highway geometries, for the purpose of excluding other labels",
+            "fields": {},
+            "properties": {
+                "buffer-size": 16
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "highway_overlay"
+        },
+        {
+            "id": "trans_linear_labels",
+            "Datasource": {
+                "dbname": "",
+                "extent": "-20037508,-20037508,20037508,20037508",
+                "geometry_field": "geom",
+                "geometry_table": "",
+                "host": "",
+                "key_field": "",
+                "max_size": 512,
+                "password": "",
+                "port": "",
+                "table": "(SELECT\n    geom, label AS name, transportation, display_class -- also needs toll\n  FROM mq_transportation\n  WHERE label IS NOT NULL\n      AND ((z(!scale_denominator!) >= 4\n      AND z(!scale_denominator!) < 8\n      AND transportation = 'road' AND display_class = 0)\n    OR (z(!scale_denominator!) >= 8\n      AND z(!scale_denominator!) < 10\n      AND transportation = 'road' AND display_class BETWEEN 0 AND 2)\n    OR (z(!scale_denominator!) >= 10\n      AND z(!scale_denominator!) < 12\n      AND ((transportation = 'road' AND display_class BETWEEN 0 AND 3)\n        OR transportation = 'ferry'))\n    OR (z(!scale_denominator!) >= 12\n      AND z(!scale_denominator!) < 14\n      AND ((transportation = 'road' AND display_class BETWEEN 0 AND 4)\n        OR transportation = 'ferry')\n        OR transportation = 'rail')\n    OR (z(!scale_denominator!) >= 14\n      AND z(!scale_denominator!) < 16\n      AND transportation IN ('road', 'ferry', 'rail'))\n    OR z(!scale_denominator!) >= 16)\n    ORDER BY zlevel ASC,\n    transportation, -- probably needs a better ordering here\n    display_class DESC\n) AS trans_linear_labels",
+                "type": "postgis",
+                "user": ""
+            },
+            "description": "Labels for linear transportation features",
+            "fields": {
+                "name": "String",
+                "rclass": "Number"
+            },
+            "properties": {
+                "buffer-size": 64
+            },
+            "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+            "name": "trans_linear_labels"
+        }
+    ],
+    "maxzoom": 16,
+    "minzoom": 0,
+    "name": "MQ Carto Vector",
+    "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over"
+}
